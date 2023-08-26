@@ -20,7 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Common\src\glad.c" />
+    <ClCompile Include="..\..\Common\src\Shader.cpp" />
     <ClCompile Include="Origem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Common\include\Shader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shaders\HelloPyramid.fs" />
+    <None Include="..\shaders\HelloPyramid.vs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="readme.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -92,7 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../dependencies/glfw-3.3.4.bin.WIN32/include;../../dependencies/GLAD/include;../../dependencies/glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../Common/include;../../dependencies/glfw-3.3.4.bin.WIN32/include;../../dependencies/GLAD/include;../../dependencies/glm</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

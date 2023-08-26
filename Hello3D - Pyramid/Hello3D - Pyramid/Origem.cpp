@@ -24,40 +24,25 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+//Classe gerenciadora dos shaders
+#include "Shader.h"
+
 
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 // Protótipos das funções
-int setupShader();
 int setupGeometry();
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
 const GLuint WIDTH = 1000, HEIGHT = 1000;
 
-// Código fonte do Vertex Shader (em GLSL): ainda hardcoded
-const GLchar* vertexShaderSource = "#version 400\n"
-"layout (location = 0) in vec3 position;\n"
-"layout (location = 1) in vec3 color;\n"
-"uniform mat4 model;\n"
-"out vec4 finalColor;\n"
-"void main()\n"
-"{\n"
-//...pode ter mais linhas de código aqui!
-"gl_Position = model * vec4(position, 1.0);\n"
-"finalColor = vec4(color, 1.0);\n"
-"}\0";
-
-//Códifo fonte do Fragment Shader (em GLSL): ainda hardcoded
-const GLchar* fragmentShaderSource = "#version 400\n"
-"in vec4 finalColor;\n"
-"out vec4 color;\n"
-"void main()\n"
-"{\n"
-"color = finalColor;\n"
-"}\n\0";
-
 bool rotateX=false, rotateY=false, rotateZ=false;
+
+//Variáveis de controle da câmera
+glm::vec3 cameraPos = glm::vec3(0.0, 0.0, -3.0);
+glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
+glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
 
 // Função MAIN
 int main()
@@ -105,19 +90,30 @@ int main()
 
 
 	// Compilando e buildando o programa de shader
-	GLuint shaderID = setupShader();
+	Shader shader("../shaders/HelloPyramid.vs", "../shaders/HelloPyramid.fs");
 
 	// Gerando um buffer simples, com a geometria de um triângulo
 	GLuint VAO = setupGeometry();
 
 
-	glUseProgram(shaderID);
+	glUseProgram(shader.ID);
 
+	//Criando a matriz de modelo
 	glm::mat4 model = glm::mat4(1); //matriz identidade;
-	GLint modelLoc = glGetUniformLocation(shaderID, "model");
-	//
 	model = glm::rotate(model, /*(GLfloat)glfwGetTime()*/glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
+	shader.setMat4("model", glm::value_ptr(model));
+
+
+	//Criando a matriz de projeção
+	glm::mat4 projection = glm::mat4(1); //matriz identidade;
+	//projection = glm::ortho(-1.0, 1.0, -1.0, 1.0, -10.0, 10.0);
+	projection = glm::perspective(glm::radians(40.0f), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+	shader.setMat4("projection", glm::value_ptr(projection));
+
+	//Criando a matriz de view
+	glm::mat4 view = glm::mat4(1);
+	view = glm::lookAt(cameraPos, glm::vec3(0.0, 0.0, 0.0), cameraUp);
+	shader.setMat4("view", glm::value_ptr(view));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -137,36 +133,39 @@ int main()
 
 		float angle = (GLfloat)glfwGetTime();
 
-		model = glm::mat4(1); 
+		model = glm::mat4(1);
+
+		// float offset = cos((GLfloat)glfwGetTime());
+		// model = glm::translate(model, glm::vec3(0.0, 0.0, offset));
 
 		if (rotateX)
 		{
 			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
-			
 		}
 		else if (rotateY)
 		{
 			model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-
 		}
 		else if (rotateZ)
 		{
 			model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
 		}
 
-		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
+		shader.setMat4("model", glm::value_ptr(model));
+
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		shader.setMat4("view", glm::value_ptr(view));
 		
 		// Chamada de desenho - drawcall
 		// Poligono Preenchido - GL_TRIANGLES
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 42);
 
 		// Chamada de desenho - drawcall
 		// CONTORNO - GL_LINE_LOOP
 		// VERTICES - GL_POINTS
 		
-		glDrawArrays(GL_POINTS, 0, 36);
+		//glDrawArrays(GL_POINTS, 0, 18);
 		glBindVertexArray(0);
 
 		// Troca os buffers da tela
@@ -208,56 +207,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateZ = true;
 	}
 
+	float cameraSpeed = 0.05;
 
-
-}
-
-//Esta função está basntante hardcoded - objetivo é compilar e "buildar" um programa de
-// shader simples e único neste exemplo de código
-// O código fonte do vertex e fragment shader está nos arrays vertexShaderSource e
-// fragmentShader source no iniçio deste arquivo
-// A função retorna o identificador do programa de shader
-int setupShader()
-{
-	// Vertex shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-	// Checando erros de compilação (exibição via log no terminal)
-	GLint success;
-	GLchar infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success)
+	if (key == GLFW_KEY_W)
 	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		cameraPos += cameraSpeed * cameraFront;
 	}
-	// Fragment shader
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	// Checando erros de compilação (exibição via log no terminal)
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
+	if (key == GLFW_KEY_S)
 	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		cameraPos -= cameraSpeed * cameraFront;
 	}
-	// Linkando os shaders e criando o identificador do programa de shader
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	// Checando por erros de linkagem
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	return shaderProgram;
 }
 
 // Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
@@ -271,95 +230,71 @@ int setupGeometry()
 	// sequencial, já visando mandar para o VBO (Vertex Buffer Objects)
 	// Cada atributo do vértice (coordenada, cores, coordenadas de textura, normal, etc)
 	// Pode ser arazenado em um VBO único ou em VBOs separados
-	GLfloat vertices2[] = {
-
-		//Base da pirâmide: 2 triângulos
-		//x    y    z    r    g    b
-		-0.5, -0.5, -0.5, 1.0, 1.0, 0.0, // v0
-		-0.5, -0.5,  0.5, 0.0, 1.0, 1.0, // v1
-		 0.5, -0.5, -0.5, 1.0, 0.0, 1.0, // v2
-
-		 -0.5, -0.5, 0.5, 1.0, 1.0, 0.0, //v3
-		  0.5, -0.5, 0.5, 0.0, 1.0, 1.0, //v4 
-		  0.5, -0.5,-0.5, 1.0, 0.0, 1.0, //v5
-
-		 // Primeiro triângulo (amarelo)
-		 -0.5, -0.5, -0.5, 1.0, 1.0, 0.0, //v6
-		  0.0,  0.5,  0.0, 1.0, 1.0, 0.0, //v7
-		  0.5, -0.5, -0.5, 1.0, 1.0, 0.0, //v8
-
-		  // Segundo triângulo (magenta)
-		  -0.5, -0.5, -0.5, 1.0, 0.0, 1.0, //v9
-		   0.0,  0.5,  0.0, 1.0, 0.0, 1.0, //v10
-		  -0.5, -0.5,  0.5, 1.0, 0.0, 1.0, //v11
-
-		  // Terceiro triângulo (amarelo)
-		  -0.5, -0.5, 0.5, 1.0, 1.0, 0.0, //v12
-		   0.0,  0.5, 0.0, 1.0, 1.0, 0.0, //v13
-		   0.5, -0.5, 0.5, 1.0, 1.0, 0.0, //v14
-
-		   // Quarto triângulo (ciano)
-		   0.5, -0.5,  0.5, 0.0, 1.0, 1.0, //v15
-		   0.0,  0.5,  0.0, 0.0, 1.0, 1.0, //v16
-		   0.5, -0.5, -0.5, 0.0, 1.0, 1.0, //v17
-	};
-
 	GLfloat vertices[] = {
-		// Bottom face - Yellow
-		-0.5, -0.5, -0.5, 1.0, 1.0, 0.0, // v0
-		-0.5, -0.5,  0.5, 1.0, 1.0, 0.0, // v1
-		0.5, -0.5, -0.5, 1.0, 1.0, 0.0, // v2
 
-		-0.5, -0.5,  0.5, 1.0, 1.0, 0.0, // v3
-		0.5, -0.5,  0.5, 1.0, 1.0, 0.0, // v4 
-		0.5, -0.5, -0.5, 1.0, 1.0, 0.0, // v5
+		// Face frontal
+		-0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
 
-		// Top face - Cyan
-		-0.5,  0.5, -0.5, 0.0, 1.0, 1.0, // v6
-		-0.5,  0.5,  0.5, 0.0, 1.0, 1.0, // v7
-		0.5,  0.5, -0.5, 0.0, 1.0, 1.0, // v8
+		0.5, -0.5, 0.5, 1.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 1.0,
+		-0.5, 0.5, 0.5, 1.0, 0.0, 1.0,
 
-		-0.5,  0.5,  0.5, 0.0, 1.0, 1.0, // v9
-		0.5,  0.5,  0.5, 0.0, 1.0, 1.0, // v10
-		0.5,  0.5, -0.5, 0.0, 1.0, 1.0, // v11
+		// Face traseira
+		-0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 0.0, 1.0,
 
-		// Left side - Magenta
-		-0.5, -0.5, -0.5, 1.0, 0.0, 1.0, // v12
-		-0.5, -0.5,  0.5, 1.0, 0.0, 1.0, // v13
-		-0.5,  0.5, -0.5, 1.0, 0.0, 1.0, // v14
+		0.5, -0.5, -0.5, 1.0, 1.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 1.0,
+		-0.5, 0.5, -0.5, 1.0, 0.0, 1.0,
 
-		-0.5, -0.5,  0.5, 1.0, 0.0, 1.0, // v15
-		-0.5,  0.5,  0.5, 1.0, 0.0, 1.0, // v16
-		-0.5,  0.5, -0.5, 1.0, 0.0, 1.0, // v17
+		// Face esquerda
+		-0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
 
-		// Right side - Blue
-		0.5, -0.5, -0.5, 0.0, 0.0, 1.0, // v18
-		0.5, -0.5,  0.5, 0.0, 0.0, 1.0, // v19
-		0.5,  0.5, -0.5, 0.0, 0.0, 1.0, // v20
+		-0.5, 0.5, -0.5, 1.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 1.0, 1.0,
+		-0.5, -0.5, 0.5, 1.0, 0.0, 1.0,
 
-		0.5, -0.5,  0.5, 0.0, 0.0, 1.0, // v21
-		0.5,  0.5,  0.5, 0.0, 0.0, 1.0, // v22
-		0.5,  0.5, -0.5, 0.0, 0.0, 1.0, // v23
+		// Face direita
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
 
-		// Front side - Green
-		-0.5, -0.5, -0.5, 0.0, 1.0, 0.0, // v24
-		0.5, -0.5, -0.5, 0.0, 1.0, 0.0, // v25
-		-0.5,  0.5, -0.5, 0.0, 1.0, 0.0, // v26
+		0.5, 0.5, -0.5, 1.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 1.0,
+		0.5, -0.5, 0.5, 1.0, 0.0, 1.0,
 
-		0.5, -0.5, -0.5, 0.0, 1.0, 0.0, // v27
-		0.5,  0.5, -0.5, 0.0, 1.0, 0.0, // v28 
-		-0.5,  0.5, -0.5, 0.0, 1.0, 0.0, // v29
+		// Face superior
+		-0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
 
-		// Back side - Red
-		-0.5, -0.5,  0.5, 1.0, 0.0, 0.0, // v30
-		0.5, -0.5,  0.5, 1.0, 0.0, 0.0, // v31
-		-0.5,  0.5,  0.5, 1.0, 0.0, 0.0, // v32
+		0.5, 0.5, -0.5, 1.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 1.0,
+		-0.5, 0.5, 0.5, 1.0, 0.0, 1.0,
 
-		0.5, -0.5,  0.5, 1.0, 0.0, 0.0, // v33
-		0.5,  0.5,  0.5, 1.0, 0.0, 0.0, // v34
-		-0.5,  0.5,  0.5, 1.0, 0.0, 0.0, // v35
+		// Face inferior
+		-0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 0.0, 1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+
+		0.5, -0.5, -0.5, 1.0, 1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, 1.0, 1.0,
+		-0.5, -0.5, 0.5, 1.0, 0.0, 1.0,
+
+		// Chão
+		-1.0, -0.5, -1.0, 0.5, 0.5, 0.5, // v0
+		1.0, -0.5, -1.0, 0.5, 0.5, 0.5, // v1
+		-1.0, -0.5, 1.0, 0.5, 0.5, 0.5, // v2
+
+		1.0, -0.5, -1.0, 0.5, 0.5, 0.5, // v3
+		1.0, -0.5, 1.0, 0.5, 0.5, 0.5, // v4
+		-1.0, -0.5, 1.0, 0.5, 0.5, 0.5, // v5
 	};
-
 
 	GLuint VBO, VAO;
 
@@ -394,8 +329,6 @@ int setupGeometry()
 	//Atributo cor (r, g, b)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
-
-
 
 	// Observe que isso é permitido, a chamada para glVertexAttribPointer registrou o VBO como o objeto de buffer de vértice 
 	// atualmente vinculado - para que depois possamos desvincular com segurança
