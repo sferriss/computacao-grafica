@@ -1,14 +1,4 @@
-/* Hello Triangle - código adaptado de https://learnopengl.com/#!Getting-started/Hello-Triangle
- *
- * Adaptado por Rossana Baptista Queiroz
- * para a disciplina de Processamento Gráfico/Computação Gráfica - Unisinos
- * Versão inicial: 7/4/2017
- * Última atualização em 09/08/2023
- *
- */
-
 #include <iostream>
-#include <string>
 #include <assert.h>
 
 using namespace std;
@@ -24,25 +14,29 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//Classe gerenciadora dos shaders
 #include "Shader.h"
 
 
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 // Protótipos das funções
-int setupGeometry();
+int setup_geometry();
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
-const GLuint WIDTH = 1000, HEIGHT = 1000;
+constexpr GLuint width = 1000, height = 1000;
 
-bool rotateX=false, rotateY=false, rotateZ=false;
+bool rotate_x=false, rotate_y=false, rotate_z=false;
 
-//Variáveis de controle da câmera
-glm::vec3 cameraPos = glm::vec3(0.0, 0.0, -3.0);
-glm::vec3 cameraFront = glm::vec3(0.0, 0.0, 1.0);
-glm::vec3 cameraUp = glm::vec3(0.0, 1.0, 0.0);
+glm::vec3 camera_pos = glm::vec3(0.0, 0.0, 3.0);
+glm::vec3 camera_front = glm::vec3(0.0, 0.0, -1.0);
+glm::vec3 camera_up = glm::vec3(0.0, 1.0, 0.0);
+float camera_speed = 0.1;
+
+bool first_mouse = true;
+float last_x = 0.0, last_y = 0.0;
+float yaw = -90.0, pitch = 0.0;
 
 // Função MAIN
 int main()
@@ -50,28 +44,21 @@ int main()
 	// Inicialização da GLFW
 	glfwInit();
 
-	//Muita atenção aqui: alguns ambientes não aceitam essas configurações
-	//Você deve adaptar para a versão do OpenGL suportada por sua placa
-	//Sugestão: comente essas linhas de código para desobrir a versão e
-	//depois atualize (por exemplo: 4.5 com 4 e 5)
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	//Essencial para computadores da Apple
-//#ifdef __APPLE__
-//	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-//#endif
-
 	// Criação da janela GLFW
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ola 3D!", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(width, height, "Ola Cubo!", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	// Fazendo o registro da função de callback para a janela GLFW
 	glfwSetKeyCallback(window, key_callback);
+	//glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
+	glfwSetCursorPosCallback(window, mouse_callback);
+
+
+	//Desabilita o desenho do cursor do mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// GLAD: carrega todos os ponteiros d funções da OpenGL
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 
@@ -90,30 +77,29 @@ int main()
 
 
 	// Compilando e buildando o programa de shader
-	Shader shader("../shaders/HelloPyramid.vs", "../shaders/HelloPyramid.fs");
+	const Shader shader("../shaders/HelloPyramid.vs", "../shaders/HelloPyramid.fs");
 
 	// Gerando um buffer simples, com a geometria de um triângulo
-	GLuint VAO = setupGeometry();
+	const GLuint vao = setup_geometry();
 
 
 	glUseProgram(shader.ID);
 
-	//Criando a matriz de modelo
-	glm::mat4 model = glm::mat4(1); //matriz identidade;
+	auto model = glm::mat4(1); //matriz identidade;
+	const GLint model_loc = glGetUniformLocation(shader.ID, "model");
+
 	model = glm::rotate(model, /*(GLfloat)glfwGetTime()*/glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	shader.setMat4("model", glm::value_ptr(model));
+	glUniformMatrix4fv(model_loc, 1, FALSE, value_ptr(model));
 
+	//Definindo a matriz de view (posição e orientação da câmera)
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+	const GLint view_loc = glGetUniformLocation(shader.ID, "view");
+	glUniformMatrix4fv(view_loc, 1, FALSE, glm::value_ptr(view));
 
-	//Criando a matriz de projeção
-	glm::mat4 projection = glm::mat4(1); //matriz identidade;
-	//projection = glm::ortho(-1.0, 1.0, -1.0, 1.0, -10.0, 10.0);
-	projection = glm::perspective(glm::radians(40.0f), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-	shader.setMat4("projection", glm::value_ptr(projection));
-
-	//Criando a matriz de view
-	glm::mat4 view = glm::mat4(1);
-	view = glm::lookAt(cameraPos, glm::vec3(0.0, 0.0, 0.0), cameraUp);
-	shader.setMat4("view", glm::value_ptr(view));
+	//Definindo a matriz de projeção perpectiva
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<GLfloat>(width) / static_cast<GLfloat>(height), 0.1f, 100.0f);
+	const GLint proj_loc = glGetUniformLocation(shader.ID, "projection");
+	glUniformMatrix4fv(proj_loc, 1, FALSE, glm::value_ptr(projection));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -131,48 +117,46 @@ int main()
 		glLineWidth(10);
 		glPointSize(20);
 
-		float angle = (GLfloat)glfwGetTime();
+		const auto angle = static_cast<GLfloat>(glfwGetTime());
 
-		model = glm::mat4(1);
+		model = glm::mat4(1); 
 
-		// float offset = cos((GLfloat)glfwGetTime());
-		// model = glm::translate(model, glm::vec3(0.0, 0.0, offset));
-
-		if (rotateX)
+		// model = glm::translate(model, glm::vec3(0.0, 0.0, cos(angle) * 10.0));
+		if (rotate_x)
 		{
 			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+			
 		}
-		else if (rotateY)
+		else if (rotate_y)
 		{
 			model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
 		}
-		else if (rotateZ)
+		else if (rotate_z)
 		{
 			model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
 		}
 
-		shader.setMat4("model", glm::value_ptr(model));
+		glUniformMatrix4fv(model_loc, 1, FALSE, value_ptr(model));
 
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		shader.setMat4("view", glm::value_ptr(view));
-		
+		//Alterando a matriz de view (posição e orientação da câmera)
+		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		glUniformMatrix4fv(view_loc, 1, FALSE, value_ptr(view));
+
+
+
 		// Chamada de desenho - drawcall
 		// Poligono Preenchido - GL_TRIANGLES
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 42);
-
-		// Chamada de desenho - drawcall
-		// CONTORNO - GL_LINE_LOOP
-		// VERTICES - GL_POINTS
 		
-		//glDrawArrays(GL_POINTS, 0, 18);
-		glBindVertexArray(0);
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 42);
 
 		// Troca os buffers da tela
 		glfwSwapBuffers(window);
 	}
 	// Pede pra OpenGL desalocar os buffers
-	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &vao);
 	// Finaliza a execução da GLFW, limpando os recursos alocados por ela
 	glfwTerminate();
 	return 0;
@@ -181,50 +165,94 @@ int main()
 // Função de callback de teclado - só pode ter uma instância (deve ser estática se
 // estiver dentro de uma classe) - É chamada sempre que uma tecla for pressionada
 // ou solta via GLFW
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+auto key_callback(GLFWwindow* window, const int key, int scancode, const int action, int mode) -> void
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 
 	if (key == GLFW_KEY_X && action == GLFW_PRESS)
 	{
-		rotateX = true;
-		rotateY = false;
-		rotateZ = false;
+		rotate_x = true;
+		rotate_y = false;
+		rotate_z = false;
 	}
 
 	if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 	{
-		rotateX = false;
-		rotateY = true;
-		rotateZ = false;
+		rotate_x = false;
+		rotate_y = true;
+		rotate_z = false;
 	}
 
 	if (key == GLFW_KEY_Z && action == GLFW_PRESS)
 	{
-		rotateX = false;
-		rotateY = false;
-		rotateZ = true;
+		rotate_x = false;
+		rotate_y = false;
+		rotate_z = true;
 	}
-
-	float cameraSpeed = 0.05;
 
 	if (key == GLFW_KEY_W)
 	{
-		cameraPos += cameraSpeed * cameraFront;
+		camera_pos += camera_speed * camera_front;
 	}
+
 	if (key == GLFW_KEY_S)
 	{
-		cameraPos -= cameraSpeed * cameraFront;
+		camera_pos -= camera_speed * camera_front;
 	}
+
+	if (key == GLFW_KEY_A)
+	{
+		camera_pos -= normalize(cross(camera_front, camera_up)) * camera_speed;
+	}
+
+	if (key == GLFW_KEY_D)
+	{
+		camera_pos += normalize(cross(camera_front, camera_up)) * camera_speed;
+	}
+
+
+
 }
+
+void mouse_callback(GLFWwindow* window, const double xpos, const double ypos)
+{
+
+	// cout << xpos << " " << ypos << endl;
+
+	if (first_mouse)
+	{
+		last_x = xpos;
+		last_y = ypos;
+		first_mouse = false;
+	}
+
+	float offsetx = xpos - last_x;
+	float offsety = last_y - ypos;
+	last_x = xpos;
+	last_y = ypos;
+
+	offsetx *= camera_speed;
+	offsety *= camera_speed;
+
+	pitch += offsety;
+	yaw += offsetx;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	camera_front = glm::normalize(front);
+
+}
+
 
 // Esta função está bastante harcoded - objetivo é criar os buffers que armazenam a 
 // geometria de um triângulo
 // Apenas atributo coordenada nos vértices
 // 1 VBO com as coordenadas, VAO com apenas 1 ponteiro para atributo
 // A função retorna o identificador do VAO
-int setupGeometry()
+int setup_geometry()
 {
 	// Aqui setamos as coordenadas x, y e z do triângulo e as armazenamos de forma
 	// sequencial, já visando mandar para o VBO (Vertex Buffer Objects)
@@ -289,30 +317,33 @@ int setupGeometry()
 		// Chão
 		-5.0, -0.5, -5.0, 0.5, 0.5, 0.5,
 		-5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
-		   5.0, -0.5, -5.0, 0.5, 0.5, 0.5,
+		5.0, -0.5, -5.0, 0.5, 0.5, 0.5,
 
 		-5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
 		5.0, -0.5,  5.0, 0.5, 0.5, 0.5,
 		5.0, -0.5, -5.0, 0.5, 0.5, 0.5
+
+
 	};
 
-	GLuint VBO, VAO;
+	GLuint vbo;
+	GLuint vao;
 
 	//Geração do identificador do VBO
-	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &vbo);
 
 	//Faz a conexão (vincula) do buffer como um buffer de array
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 	//Envia os dados do array de floats para o buffer da OpenGl
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	//Geração do identificador do VAO (Vertex Array Object)
-	glGenVertexArrays(1, &VAO);
+	glGenVertexArrays(1, &vao);
 
 	// Vincula (bind) o VAO primeiro, e em seguida  conecta e seta o(s) buffer(s) de vértices
 	// e os ponteiros para os atributos 
-	glBindVertexArray(VAO);
+	glBindVertexArray(vao);
 	
 	//Para cada atributo do vertice, criamos um "AttribPointer" (ponteiro para o atributo), indicando: 
 	// Localização no shader * (a localização dos atributos devem ser correspondentes no layout especificado no vertex shader)
@@ -323,12 +354,14 @@ int setupGeometry()
 	// Deslocamento a partir do byte zero 
 	
 	//Atributo posição (x, y, z)
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), static_cast<GLvoid*>(nullptr));
 	glEnableVertexAttribArray(0);
 
 	//Atributo cor (r, g, b)
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<GLvoid*>(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+
+
 
 	// Observe que isso é permitido, a chamada para glVertexAttribPointer registrou o VBO como o objeto de buffer de vértice 
 	// atualmente vinculado - para que depois possamos desvincular com segurança
@@ -337,6 +370,5 @@ int setupGeometry()
 	// Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
 	glBindVertexArray(0);
 
-	return VAO;
+	return vao;
 }
-
