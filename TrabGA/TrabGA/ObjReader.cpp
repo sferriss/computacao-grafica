@@ -60,6 +60,7 @@ int obj_reader::load_simple_obj(const std::string& file_path, int& n_vertices, g
 	{
 		cout << "Problema ao encontrar o arquivo " << file_path << endl;
 	}
+	
 	input_file.close();
 	GLuint vbo;
 	GLuint vao;
