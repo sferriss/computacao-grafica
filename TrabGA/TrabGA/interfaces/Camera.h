@@ -9,7 +9,7 @@ public:
     camera();
     camera(GLuint width, GLuint height, float sensitivity);
     
-    void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+    void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
     
     glm::vec3 get_camera_front() const;
     glm::vec3 get_camera_up() const;

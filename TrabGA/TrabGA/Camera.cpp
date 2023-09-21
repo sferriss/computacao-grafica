@@ -18,22 +18,22 @@ camera::camera(const GLuint width, const GLuint height, float sensitivity)
     this->sensitivity_ = sensitivity;
 }
 
-void camera::mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void camera::mouse_callback(GLFWwindow* window, const double x_pos, const double y_pos)
 {
     constexpr float pitch_upper_limit = 89.0f;
     constexpr float pitch_lower_limit = -89.0f;
 
     if (first_mouse_)
     {
-        last_x_ = xpos;
-        last_y_ = ypos;
+        last_x_ = x_pos;
+        last_y_ = y_pos;
         first_mouse_ = false;
     }
 
-    float xoffset = xpos - last_x_;
-    float yoffset = last_y_ - ypos;
-    last_x_ = xpos;
-    last_y_ = ypos;
+    float xoffset = x_pos - last_x_;
+    float yoffset = last_y_ - y_pos;
+    last_x_ = x_pos;
+    last_y_ = y_pos;
 
     xoffset *= this->sensitivity_;
     yoffset *= this->sensitivity_;
