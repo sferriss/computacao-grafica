@@ -15,6 +15,9 @@ using namespace std;
 void global_key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void global_mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void get_version();
+void handler_translation(glm::mat4& model);
+void handler_scale(glm::mat4& model);
+void handler_rotation(glm::mat4& model, GLfloat angle);
 
 
 const GLuint WIDTH = 1000, HEIGHT = 1000;
@@ -80,21 +83,11 @@ int main()
 
 		model = glm::mat4(1);
 
-		if (movement.get_rotate_x())
-		{
-			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+		handler_translation(model);
 
-		}
-		else if (movement.get_rotate_y())
-		{
-			model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-
-		}
-		else if (movement.get_rotate_z())
-		{
-			model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		}
+		handler_scale(model);
+		
+		handler_rotation(model, angle);
 
 		shader.setMat4("model", value_ptr(model));
 
@@ -129,4 +122,44 @@ void get_version()
 	const GLubyte* version = glGetString(GL_VERSION);
 	cout << "Renderer: " << renderer << endl;
 	cout << "OpenGL version supported " << version << endl;
+}
+
+void handler_translation(glm::mat4& model)
+{
+	if (movement.get_translate_x())
+	{
+		model = translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+	}
+	else if (movement.get_translate_y())
+	{
+		model = translate(model, glm::vec3(0.0f, 2.0f, 0.0f));
+	}
+	else if (movement.get_translate_z())
+	{
+		model = translate(model, glm::vec3(0.0f, 0.0f, 2.0f));
+	}
+}
+
+void handler_scale(glm::mat4& model)
+{
+	model = scale(model, glm::vec3(movement.get_scale_x(), movement.get_scale_y(), movement.get_scale_z()));
+}
+
+void handler_rotation(glm::mat4& model, const GLfloat angle)
+{
+	if (movement.get_rotate_x())
+	{
+		model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+
+	}
+	else if (movement.get_rotate_y())
+	{
+		model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+	}
+	else if (movement.get_rotate_z())
+	{
+		model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	}
 }
