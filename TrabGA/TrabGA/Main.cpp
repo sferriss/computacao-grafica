@@ -2,6 +2,8 @@
 #include <fstream>	
 #include <string>
 
+#include "interfaces/Mesh.h"
+
 using namespace std;
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,7 +22,7 @@ void handler_scale(glm::mat4& model);
 void handler_rotation(glm::mat4& model, GLfloat angle);
 
 
-const GLuint WIDTH = 1000, HEIGHT = 1000;
+const GLuint WIDTH = 1600, HEIGHT = 900;
 camera camera(WIDTH, HEIGHT, 0.08f);
 movement_handler movement(camera, 0.08f);
 
@@ -50,11 +52,10 @@ int main()
 	
 	Shader shader("./shaders/Viewer.vs", "./shaders/Viewer.fs");
 	
-	int n_verts1;
+	int n_verts1, n_verts2, n_verts3;
 	const GLuint vao1 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts1);
-
-	int n_verts2;
 	const GLuint vao2 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts2);
+	const GLuint vao3 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts3);
 
 	glUseProgram(shader.ID);
 	
@@ -64,6 +65,12 @@ int main()
 	
 	auto view = lookAt(movement.get_camera_pos(), glm::vec3(0.0, 0.0, 0.0), camera.get_camera_up());
 	shader.setMat4("view", value_ptr(view));
+	
+	
+	mesh suzanne1, suzanne2, suzanne3;
+	suzanne1.initialize(vao1, n_verts1, &shader, glm::vec3(-3.0, 0.0, 0.0));
+	suzanne2.initialize(vao2, n_verts1, &shader, glm::vec3(0.0, 0.0, 0.0));
+	suzanne3.initialize(vao3, n_verts1, &shader, glm::vec3(3.0, 0.0, 0.0));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -83,9 +90,15 @@ int main()
 		view = lookAt(movement.get_camera_pos(), movement.get_camera_pos() + camera.get_camera_front(), camera.get_camera_up());
 		shader.setMat4("view", value_ptr(view));
 
-		glm::mat4 model1 = glm::mat4(1);
+		auto model1 = glm::mat4(1);
 		model1 = translate(model1, glm::vec3(-3.0, 0.0, 0.0));
-		glm::mat4 model2 = glm::mat4(1);
+
+		auto model2 = glm::mat4(1);
+		model2 = translate(model2, glm::vec3(0.0, 0.0, 0.0));
+
+		auto model3 = glm::mat4(1);
+		model3 = translate(model3, glm::vec3(3.0, 0.0, 0.0));
+		
 		
 		if (movement.get_selected_mesh_index() == 1) {
 			handler_translation(model1);
@@ -99,21 +112,25 @@ int main()
 			handler_scale(model2);
 			handler_rotation(model2, angle);
 		}
-		shader.setMat4("model", value_ptr(model1));
-		glBindVertexArray(vao1);
-		glDrawArrays(GL_TRIANGLES, 0, n_verts1);
-		glBindVertexArray(0);
 
-		shader.setMat4("model", value_ptr(model2));
-		glBindVertexArray(vao2);
-		glDrawArrays(GL_TRIANGLES, 0, n_verts2);
-		glBindVertexArray(0);
+		if (movement.get_selected_mesh_index() == 3) {
+			handler_translation(model3); 
+			handler_scale(model3);
+			handler_rotation(model3, angle);
+		}
+		
+		suzanne1.draw(model1);
+		
+		suzanne2.draw(model2);
+		
+		suzanne3.draw(model3);
 
 		glfwSwapBuffers(window);
 	}
 
-	// glDeleteVertexArrays(1, &vao1);
+	glDeleteVertexArrays(1, &vao1);
 	glDeleteVertexArrays(1, &vao2);
+	glDeleteVertexArrays(1, &vao3);
 	glfwTerminate();
 	return 0;
 }
