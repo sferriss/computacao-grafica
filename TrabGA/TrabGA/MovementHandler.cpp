@@ -4,7 +4,7 @@ movement_handler::movement_handler(camera& cam, const float sensitivity) :
     rotate_x_(false), rotate_y_(false), rotate_z_(false), 
     translate_x_(false), translate_y_(false), translate_z_(false),
     scale_x_(1.0f), scale_y_(1.0f), scale_z_(1.0f),
-    camera_pos_(glm::vec3(0.0, 0.0, 3.0)), camera_(cam)
+    camera_pos_(glm::vec3(0.0, 0.0, 3.0)), camera_(cam), selected_mesh_index_(-1)
 {
     this->sensitivity_ = sensitivity;
 }
@@ -102,6 +102,22 @@ void movement_handler::key_callback(GLFWwindow* window, int key, int scancode, i
     {
         scale_z_ -= 0.1f;
     }
+
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        if (key == GLFW_KEY_1)
+        {
+            selected_mesh_index_ = 1;
+        }
+        if (key == GLFW_KEY_2)
+        {
+            selected_mesh_index_ = 2;
+        }
+        if (key == GLFW_KEY_3)
+        {
+            selected_mesh_index_ = 3;
+        }
+    }
 }
 
 glm::vec3 movement_handler::get_camera_pos() const
@@ -152,4 +168,9 @@ float movement_handler::get_scale_y() const
 float movement_handler::get_scale_z() const
 {
     return scale_z_;
+}
+
+int movement_handler::get_selected_mesh_index() const
+{
+    return selected_mesh_index_;
 }
