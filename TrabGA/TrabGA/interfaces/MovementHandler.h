@@ -20,6 +20,7 @@ public:
     float get_scale_x() const;
     float get_scale_y() const;
     float get_scale_z() const;
+    int get_selected_mesh_index() const;
 
 private:
     bool rotate_x_;
@@ -34,4 +35,5 @@ private:
     float scale_z_;
     glm::vec3 camera_pos_;
     camera& camera_;
+    int selected_mesh_index_;
 };

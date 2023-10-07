@@ -50,14 +50,13 @@ int main()
 	
 	Shader shader("./shaders/Viewer.vs", "./shaders/Viewer.fs");
 	
-	int n_verts;
-	const GLuint vao = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts);
+	int n_verts1;
+	const GLuint vao1 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts1);
+
+	int n_verts2;
+	const GLuint vao2 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts2);
 
 	glUseProgram(shader.ID);
-	
-	auto model = glm::mat4(1);
-	model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	shader.setMat4("model", value_ptr(model));
 	
 	glm::mat4 projection = glm::perspective(glm::radians(40.0f),
 	                                        static_cast<GLfloat>(WIDTH) / static_cast<GLfloat>(HEIGHT), 0.1f, 100.0f);
@@ -72,7 +71,7 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
-		
+    
 		glClearColor(0.7f, 0.7f, 0.7f, 0.7f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -81,27 +80,40 @@ int main()
 
 		const auto angle = static_cast<GLfloat>(glfwGetTime());
 
-		model = glm::mat4(1);
-
-		handler_translation(model);
-
-		handler_scale(model);
-		
-		handler_rotation(model, angle);
-
-		shader.setMat4("model", value_ptr(model));
-
 		view = lookAt(movement.get_camera_pos(), movement.get_camera_pos() + camera.get_camera_front(), camera.get_camera_up());
 		shader.setMat4("view", value_ptr(view));
+
+		glm::mat4 model1 = glm::mat4(1);
+		model1 = translate(model1, glm::vec3(-3.0, 0.0, 0.0));
+		glm::mat4 model2 = glm::mat4(1);
 		
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, n_verts);
+		if (movement.get_selected_mesh_index() == 1) {
+			handler_translation(model1);
+			handler_scale(model1);
+			handler_rotation(model1, angle);
+			
+		}
 		
+		if (movement.get_selected_mesh_index() == 2) {
+			handler_translation(model2); 
+			handler_scale(model2);
+			handler_rotation(model2, angle);
+		}
+		shader.setMat4("model", value_ptr(model1));
+		glBindVertexArray(vao1);
+		glDrawArrays(GL_TRIANGLES, 0, n_verts1);
 		glBindVertexArray(0);
-		
+
+		shader.setMat4("model", value_ptr(model2));
+		glBindVertexArray(vao2);
+		glDrawArrays(GL_TRIANGLES, 0, n_verts2);
+		glBindVertexArray(0);
+
 		glfwSwapBuffers(window);
 	}
-	glDeleteVertexArrays(1, &vao);
+
+	// glDeleteVertexArrays(1, &vao1);
+	glDeleteVertexArrays(1, &vao2);
 	glfwTerminate();
 	return 0;
 }
