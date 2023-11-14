@@ -3,6 +3,7 @@
 #include <string>
 
 #include "interfaces/Mesh.h"
+#include "interfaces/Object.h"
 
 using namespace std;
 
@@ -23,8 +24,8 @@ void handler_rotation(glm::mat4& model, GLfloat angle);
 
 
 const GLuint WIDTH = 1600, HEIGHT = 900;
-camera camera(WIDTH, HEIGHT, 0.08f);
-movement_handler movement(camera, 0.08f);
+camera camera(WIDTH, HEIGHT, 0.1f);
+movement_handler movement(camera, 0.1f);
 
 int main()
 {
@@ -51,11 +52,6 @@ int main()
 	glViewport(0, 0, width, height);
 	
 	Shader shader("./shaders/Viewer.vs", "./shaders/Viewer.fs");
-	
-	int n_verts1, n_verts2, n_verts3;
-	const GLuint vao1 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts1);
-	const GLuint vao2 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts2);
-	const GLuint vao3 = obj_reader::load_simple_obj("../../3DModels/suzanneTriLowPoly.obj", n_verts3);
 
 	glUseProgram(shader.ID);
 	
@@ -65,14 +61,25 @@ int main()
 	
 	auto view = lookAt(movement.get_camera_pos(), glm::vec3(0.0, 0.0, 0.0), camera.get_camera_up());
 	shader.setMat4("view", value_ptr(view));
-	
-	
-	mesh suzanne1, suzanne2, suzanne3;
-	suzanne1.initialize(vao1, n_verts1, &shader, glm::vec3(-3.0, 0.0, 0.0));
-	suzanne2.initialize(vao2, n_verts1, &shader, glm::vec3(0.0, 0.0, 0.0));
-	suzanne3.initialize(vao3, n_verts1, &shader, glm::vec3(3.0, 0.0, 0.0));
 
 	glEnable(GL_DEPTH_TEST);
+
+	Object obj, obj2;
+	obj.initialize("../../3D_models/Pokemon/Pikachu.obj", &shader, glm::vec3(3.0,0.0,0.0));
+	obj2.initialize("../../3D_models/Pokemon/Pikachu.obj", &shader);
+	
+	shader.setFloat("ka", 0.4);
+	shader.setFloat("kd", 0.5);
+	shader.setFloat("ks", 0.5);
+	shader.setFloat("q", 10.0);
+
+
+	shader.setVec3("lightPos", -2.0, 10.0, 2.0);
+	shader.setVec3("lightColor", 1.0, 1.0, 1.0);
+
+
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(glGetUniformLocation(shader.ID, "colorBuffer"), 0);
 
 	
 	while (!glfwWindowShouldClose(window))
@@ -119,18 +126,13 @@ int main()
 			handler_rotation(model3, angle);
 		}
 		
-		suzanne1.draw(model1);
+		obj.draw();
 		
-		suzanne2.draw(model2);
-		
-		suzanne3.draw(model3);
+		obj2.draw();
 
 		glfwSwapBuffers(window);
 	}
-
-	glDeleteVertexArrays(1, &vao1);
-	glDeleteVertexArrays(1, &vao2);
-	glDeleteVertexArrays(1, &vao3);
+	
 	glfwTerminate();
 	return 0;
 }

@@ -8,23 +8,16 @@
 class mesh
 {
 public:
-    mesh()
-    {
-    }
+    mesh() {}
+    ~mesh() {}
+    void initialize(GLuint VAO, int nVertices, Shader* shader, GLuint texID);
+    void update(glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 axis);
+    void draw();
 
-    ~mesh()
-    {
-    }
-
-    void initialize(GLuint vao, int n_vertices, Shader* shader, glm::vec3 position = glm::vec3(0.0f),
-                    glm::vec3 scale = glm::vec3(1), float angle = 0.0, glm::vec3 axis = glm::vec3(0.0, 0.0, 1.0));
-    void draw(glm::mat4& model) const;
-    
-    GLuint vao;
-    int n_vertices;
-    glm::vec3 position;
-    float angle;
-    glm::vec3 axis;
-    glm::vec3 scale;
+protected:
+    GLuint VAO;
+    int nVertices;
     Shader* shader;
+    GLuint texID;
+    glm::mat4 model;
 };
