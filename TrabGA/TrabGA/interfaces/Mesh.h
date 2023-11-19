@@ -12,7 +12,7 @@ public:
     ~mesh() {}
     void initialize(GLuint VAO, int nVertices, Shader* shader, GLuint texID);
     void update(glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 axis);
-    void draw();
+    void draw() const;
 
 protected:
     GLuint VAO;

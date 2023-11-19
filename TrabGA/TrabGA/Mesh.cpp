@@ -17,7 +17,7 @@ void mesh::update(glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 ax
 	shader->setMat4("model", value_ptr(this->model));
 }
 
-void mesh::draw()
+void mesh::draw() const
 {
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glBindVertexArray(VAO);

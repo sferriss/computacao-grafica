@@ -8,19 +8,46 @@ void Object::initialize(string filePath, Shader* shader, glm::vec3 position, glm
 	this->axis = axis;
 	this->shader = shader;
 
-	loadObj(filePath);
+	load_obj(filePath);
 }
 
 void Object::draw()
 {
-	for (auto& mesh : grupos)
+	for (auto& mesh : groups)
 	{
 		mesh.update(position, scale, angle, axis);
 		mesh.draw();
 	}
 }
 
-void Object::loadObj(string filePath)
+void Object::rotate(float deltaAngle, const glm::vec3& rotationAxis) {
+	this->angle += deltaAngle;
+	this->axis = rotationAxis;
+	for (auto& mesh : groups) {
+		mesh.update(position, scale, angle, axis);
+	}
+}
+
+void Object::translate(const glm::vec3& translation) {
+	this->position = translation;
+	for (auto& mesh : groups) {
+		mesh.update(position, scale, angle, axis);
+	}
+}
+
+void Object::scale_object(const glm::vec3& scale_factor) {
+	this->scale = scale_factor;
+	for (auto& mesh : groups) {
+		mesh.update(position, scale, angle, axis);
+	}
+}
+
+glm::vec3 Object::get_position() const
+{
+	return this->position;
+}
+
+void Object::load_obj(const string& filePath)
 {
 	string texNomes[] = {"../../3D_models/Pokemon/textures/PikachuMouthDh.png",
                          "../../3D_models/Pokemon/textures/PikachuDh.png",
@@ -47,7 +74,7 @@ void Object::loadObj(string filePath)
 		char line[100];
 		string sline;
 
-		bool inicioGrupo = true;
+		bool inicio_grupo = true;
 
 		while (!inputFile.eof())
 		{
@@ -61,20 +88,20 @@ void Object::loadObj(string filePath)
 			
 			if (word == "v" || inputFile.eof())
 			{
-				if (inicioGrupo)
+				if (inicio_grupo)
 				{
 					if (vbuffer.size())
 					{
-						inicioGrupo = false;
+						inicio_grupo = false;
 
 						mesh grupo;
-						GLuint texID = loadTexture(texNomes[i]);
+						GLuint texID = load_texture(texNomes[i]);
 						i++;
 						int nVerts;
-						GLuint VAO = generateVAO(vbuffer, nVerts);
+						GLuint VAO = generate_vao(vbuffer, nVerts);
 						grupo.initialize(VAO, nVerts, shader, texID);
 
-						grupos.push_back(grupo);
+						groups.push_back(grupo);
 						
 						vbuffer.clear();
 					}
@@ -104,7 +131,7 @@ void Object::loadObj(string filePath)
 
 			if (word == "g")
 			{
-				inicioGrupo = true;
+				inicio_grupo = true;
 			}
 
 			if (word == "f")
@@ -155,7 +182,7 @@ void Object::loadObj(string filePath)
 
 }
 
-GLuint Object::generateVAO(vector<GLfloat> vbuffer, int& nVerts)
+GLuint Object::generate_vao(vector<GLfloat> vbuffer, int& nVerts)
 {
 	GLuint VBO, VAO;
 
@@ -190,12 +217,12 @@ GLuint Object::generateVAO(vector<GLfloat> vbuffer, int& nVerts)
 	return VAO;
 }
 
-GLuint Object::loadTexture(string filePath)
+GLuint Object::load_texture(string file_path)
 {
-	GLuint texID;
+	GLuint tex_id;
 	
-	glGenTextures(1, &texID);
-	glBindTexture(GL_TEXTURE_2D, texID);
+	glGenTextures(1, &tex_id);
+	glBindTexture(GL_TEXTURE_2D, tex_id);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -203,7 +230,7 @@ GLuint Object::loadTexture(string filePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(file_path.c_str(), &width, &height, &nrChannels, 0);
 
 	if (data)
 	{
@@ -227,5 +254,5 @@ GLuint Object::loadTexture(string filePath)
 	stbi_image_free(data);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return texID;
+	return tex_id;
 }

@@ -1,3 +1,4 @@
+#include <codecvt>
 #include <iostream>
 #include <fstream>	
 #include <string>
@@ -18,14 +19,16 @@ using namespace std;
 void global_key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void global_mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void get_version();
-void handler_translation(glm::mat4& model);
-void handler_scale(glm::mat4& model);
-void handler_rotation(glm::mat4& model, GLfloat angle);
+void handler_translation(Object& obj);
+void handler_scale(Object& obj);
+void handler_rotation(Object& obj);
+void handler_operation(Object& obj);
+float get_direction();
 
 
 const GLuint WIDTH = 1600, HEIGHT = 900;
-camera camera(WIDTH, HEIGHT, 0.1f);
-movement_handler movement(camera, 0.1f);
+camera camera(WIDTH, HEIGHT, 0.2f);
+movement_handler movement(camera, 0.2f);
 
 int main()
 {
@@ -92,38 +95,18 @@ int main()
 		glLineWidth(10);
 		glPointSize(20);
 
-		const auto angle = static_cast<GLfloat>(glfwGetTime());
-
 		view = lookAt(movement.get_camera_pos(), movement.get_camera_pos() + camera.get_camera_front(), camera.get_camera_up());
 		shader.setMat4("view", value_ptr(view));
 
-		auto model1 = glm::mat4(1);
-		model1 = translate(model1, glm::vec3(-3.0, 0.0, 0.0));
-
-		auto model2 = glm::mat4(1);
-		model2 = translate(model2, glm::vec3(0.0, 0.0, 0.0));
-
-		auto model3 = glm::mat4(1);
-		model3 = translate(model3, glm::vec3(3.0, 0.0, 0.0));
-		
-		
 		if (movement.get_selected_mesh_index() == 1) {
-			handler_translation(model1);
-			handler_scale(model1);
-			handler_rotation(model1, angle);
-			
+			handler_rotation(obj);
+			handler_translation(obj);
+			handler_scale(obj);
 		}
-		
 		if (movement.get_selected_mesh_index() == 2) {
-			handler_translation(model2); 
-			handler_scale(model2);
-			handler_rotation(model2, angle);
-		}
-
-		if (movement.get_selected_mesh_index() == 3) {
-			handler_translation(model3); 
-			handler_scale(model3);
-			handler_rotation(model3, angle);
+			handler_rotation(obj2);
+			handler_translation(obj2);
+			handler_scale(obj2);
 		}
 		
 		obj.draw();
@@ -155,42 +138,55 @@ void get_version()
 	cout << "OpenGL version supported " << version << endl;
 }
 
-void handler_translation(glm::mat4& model)
+void handler_translation(Object& obj)
 {
+	glm::vec3 current_position = obj.get_position();
 	if (movement.get_translate_x())
 	{
-		model = translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+		current_position.x += get_direction();
+		obj.translate(current_position);
+		movement.set_translate_x();
 	}
 	else if (movement.get_translate_y())
 	{
-		model = translate(model, glm::vec3(0.0f, 2.0f, 0.0f));
+		current_position.y += get_direction();
+		obj.translate(current_position);
+		movement.set_translate_y();
 	}
 	else if (movement.get_translate_z())
 	{
-		model = translate(model, glm::vec3(0.0f, 0.0f, 2.0f));
+		current_position.z += get_direction();
+		obj.translate(current_position);
+		movement.set_translate_z();
 	}
 }
 
-void handler_scale(glm::mat4& model)
+void handler_scale(Object& obj)
 {
-	model = scale(model, glm::vec3(movement.get_scale_x(), movement.get_scale_y(), movement.get_scale_z()));
+	obj.scale_object(glm::vec3(movement.get_scale_x(), movement.get_scale_y(), movement.get_scale_z()));
 }
 
-void handler_rotation(glm::mat4& model, const GLfloat angle)
+void handler_rotation(Object& obj)
 {
 	if (movement.get_rotate_x())
 	{
-		model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
-
+		obj.rotate(1, glm::vec3(1.0f, 0.0f, 0.0f));
 	}
 	else if (movement.get_rotate_y())
 	{
-		model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-
+		obj.rotate(1, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 	else if (movement.get_rotate_z())
 	{
-		model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
+		obj.rotate(1, glm::vec3(0.0f, 0.0f, 1.0f));
 	}
+}
+
+float get_direction()
+{
+	if(movement.get_up())
+	{
+		return 1.0f;
+	}
+	return -1.0f;
 }
