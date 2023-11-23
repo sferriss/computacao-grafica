@@ -11,7 +11,7 @@ camera::camera(const GLuint width, const GLuint height, float sensitivity)
     this->first_mouse_ = true;
     this->last_x_ = width / 2.0;
     this->last_y_ = height / 2.0;
-    this->yaw_ = -90.0;
+    this->yaw_ = -50.0;
     this->pitch_ = -0.0f;
     this->camera_front_ = glm::vec3(0.0f, 0.0f, -1.0f);
     this->camera_up_ = glm::vec3(0.0f, 1.0f, 0.0f);

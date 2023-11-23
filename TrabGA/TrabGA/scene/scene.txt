@@ -1,0 +1,20 @@
+newobj
+translation 3.0 0.0 0.0
+scale 1 1 1
+objpath ./objs/Mercurio.obj
+
+newobj
+translation 0.0 0.0 0.0
+scale 1 1 1
+objpath ./objs/Terra.obj
+
+newobj
+translation 6.0 -2.0 0.0
+scale 1 1 1
+objpath ./objs/Pikachu.obj
+
+newobj
+translation 10.0 0.0 0.0
+scale 1 1 1
+objpath ./objs/Pokebola.obj
+

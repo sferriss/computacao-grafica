@@ -116,6 +116,11 @@ void movement_handler::key_callback(GLFWwindow* window, int key, int scancode, i
         selected_mesh_index_ = 3;
     }
 
+    if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+    {
+        selected_mesh_index_ = 4;
+    }
+
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
         set_up();

@@ -9,9 +9,9 @@ in vec2 texCoord;
 out vec4 color;
 
 //Propriedades da superficie
-uniform float ka;
-uniform float kd;
-uniform float ks;
+uniform vec3 ka;
+uniform vec3 kd;
+uniform vec3 ks;
 uniform float q;
 
 //Propriedades da fonte de luz

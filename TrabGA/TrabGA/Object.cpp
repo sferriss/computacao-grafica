@@ -1,18 +1,26 @@
 #include "interfaces/Object.h"
 
-void Object::initialize(string filePath, Shader* shader, glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 axis)
+#include "interfaces/MtlReader.h"
+
+void Object::initialize(string filePath, Shader* shader, int id, glm::vec3 position, glm::vec3 scale, float angle, glm::vec3 axis)
 {
 	this->position = position;
 	this->scale = scale;
 	this->angle = angle;
 	this->axis = axis;
 	this->shader = shader;
+	this->id = id;
 
 	load_obj(filePath);
 }
 
 void Object::draw()
 {
+	shader->setVec3("ka", material.ka);
+	shader->setVec3("kd", material.kd);
+	shader->setVec3("ks", material.ks);
+	shader->setFloat("q", material.q);
+	
 	for (auto& mesh : groups)
 	{
 		mesh.update(position, scale, angle, axis);
@@ -49,16 +57,10 @@ glm::vec3 Object::get_position() const
 
 void Object::load_obj(const string& filePath)
 {
-	string texNomes[] = {"../../3D_models/Pokemon/textures/PikachuMouthDh.png",
-                         "../../3D_models/Pokemon/textures/PikachuDh.png",
-						 "../../3D_models/Pokemon/textures/PikachuHohoDh.png",
-						 "../../3D_models/Pokemon/textures/PikachuEyeDh.png",
-						 "../../3D_models/Pokemon/textures/PikachuDh.png" };
 	int i = 0;
 
 	glm::vec3 color;
 	color.r = 1.0;  color.g = 0.0;  color.b = 0.0;
-
 
 	vector <glm::vec3> vertices;
 	vector <glm::vec3> colors;
@@ -66,6 +68,7 @@ void Object::load_obj(const string& filePath)
 	vector <glm::vec2> texCoords;
 	vector <glm::vec3> normals;
 	vector <GLfloat> vbuffer;
+	MtlReader mtl;
 
 	ifstream inputFile;
 	inputFile.open(filePath.c_str());
@@ -85,6 +88,13 @@ void Object::load_obj(const string& filePath)
 
 			istringstream ssline(line);
 			ssline >> word;
+
+			if (word == "mtllib") {
+				string textPath;
+				ssline >> textPath;
+				mtl.read(textPath);
+				this->material = mtl.material;
+			}
 			
 			if (word == "v" || inputFile.eof())
 			{
@@ -95,7 +105,7 @@ void Object::load_obj(const string& filePath)
 						inicio_grupo = false;
 
 						mesh grupo;
-						GLuint texID = load_texture(texNomes[i]);
+						GLuint texID = load_texture(mtl.material.textures[i]);
 						i++;
 						int nVerts;
 						GLuint VAO = generate_vao(vbuffer, nVerts);
@@ -170,16 +180,13 @@ void Object::load_obj(const string& filePath)
 					vbuffer.push_back(normals[index].z);
 				}
 			}
-
 		}
-
 	}
 	else
 	{
 		cout << "Problema ao encontrar o arquivo " << filePath << endl;
 	}
 	inputFile.close();
-
 }
 
 GLuint Object::generate_vao(vector<GLfloat> vbuffer, int& nVerts)
@@ -236,13 +243,11 @@ GLuint Object::load_texture(string file_path)
 	{
 		if (nrChannels == 3)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-				data);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		}
 		else
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-				data);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		}
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
