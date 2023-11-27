@@ -13,6 +13,8 @@
 
 // GLFW
 #include <GLFW/glfw3.h>
+#include <glm/detail/type_vec.hpp>
+#include <glm/detail/type_vec3.hpp>
 
 using namespace std;
 
@@ -122,6 +124,10 @@ public:
 		glUniform3f(glGetUniformLocation(this->ID, name.c_str()), v1, v2, v3);
 	}
 
+	void setVec3(const std::string& name, const glm::vec3& value) const {
+		glUniform3f(glGetUniformLocation(this->ID, name.c_str()), value.x, value.y, value.z);
+	}
+
 	void setVec4(const std::string& name, float v1, float v2, float v3, float v4) const
 	{
 		glUniform4f(glGetUniformLocation(this->ID, name.c_str()), v1, v2, v3,v4);
@@ -132,4 +138,3 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(this->ID, name.c_str()), 1, GL_FALSE, v);
 	}
 };
-
