@@ -10,6 +10,7 @@ void Object::initialize(string filePath, Shader* shader, int id, glm::vec3 posit
 	this->axis = axis;
 	this->shader = shader;
 	this->id = id;
+	this->material.initialize();
 
 	load_obj(filePath);
 }
@@ -189,6 +190,23 @@ void Object::load_obj(const string& filePath)
 	inputFile.close();
 }
 
+void Object::load_curve(const std::vector<glm::vec3*>& curvePoints)
+{
+	std::vector<GLfloat> vbuffer;
+	for (const auto& point : curvePoints) {
+		vbuffer.push_back(point->x);
+		vbuffer.push_back(point->y);
+		vbuffer.push_back(point->z);
+	}
+	
+	int nVerts = vbuffer.size() / 3;
+	
+	GLuint VAO = generate_vao_curve(vbuffer, nVerts);
+	
+	VAO = VAO;
+	int numVertices = nVerts;
+}
+
 GLuint Object::generate_vao(vector<GLfloat> vbuffer, int& nVerts)
 {
 	GLuint VBO, VAO;
@@ -260,4 +278,26 @@ GLuint Object::load_texture(string file_path)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex_id;
+}
+
+GLuint Object::generate_vao_curve(const std::vector<GLfloat>& vbuffer, int& nVerts) {
+	GLuint VBO, VAO;
+
+	// Gera e vincula o VBO e o VAO
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vbuffer.size() * sizeof(GLfloat), &vbuffer[0], GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	// Configura os atributos dos vértices (posição)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// Desvincula os buffers para evitar alterações acidentais
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	return VAO;
 }

@@ -18,9 +18,11 @@ public:
     void translate(const glm::vec3& translation);
     void scale_object(const glm::vec3& scale_factor);
     glm::vec3 get_position() const;
+    void load_curve(const std::vector<glm::vec3*>& curvePoints);
     int id;
 protected:
     void load_obj(const string& filePath);
+    GLuint generate_vao_curve(const std::vector<GLfloat>& vbuffer, int& nVerts);
     GLuint generate_vao(vector<GLfloat> vertbuffer, int& nVerts);
     GLuint load_texture(string file_path);
     vector <mesh> groups;

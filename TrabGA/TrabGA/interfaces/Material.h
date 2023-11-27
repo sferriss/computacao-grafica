@@ -7,10 +7,10 @@
 class Material
 {
 public:
-    glm::vec3 ka; // Ambient reflectivity
-    glm::vec3 kd; // Diffuse reflectivity
-    glm::vec3 ks; // Specular reflectivity
-    float q;      // Shininess
+    glm::vec3 ka;
+    glm::vec3 kd;
+    glm::vec3 ks;
+    float q;
     std::vector <std::string> textures;
 
     Material() = default;

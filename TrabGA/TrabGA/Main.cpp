@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 
+#include "interfaces/CurveReader.h"
 #include "interfaces/Mesh.h"
 #include "interfaces/Object.h"
 #include "interfaces/SceneReader.h"
@@ -30,6 +31,9 @@ float get_direction();
 const GLuint WIDTH = 1600, HEIGHT = 900;
 camera camera(WIDTH, HEIGHT, 0.1f);
 movement_handler movement(camera, 0.2f);
+vector<vec3*> curvePoints;
+float curveScale = 20.0f;
+
 
 int main()
 {
@@ -69,6 +73,12 @@ int main()
 
     scene_reader scene;
     scene.initialize("./scene/scene.txt", &shader);
+
+    // CurveReader* curveReader = new CurveReader();
+    // curvePoints = curveReader->read("./scene/pista.txt", curveScale);
+    //
+    // Object curveObject;
+    // curveObject.load_curve(curvePoints);
 
     shader.setVec3("lightPos", 3.0, 2.0, 10.0);
     shader.setVec3("lightColor", 1.0, 1.0, 1.0);

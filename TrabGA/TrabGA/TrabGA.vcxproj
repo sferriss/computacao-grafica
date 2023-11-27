@@ -236,6 +236,7 @@
       <AdditionalIncludeDirectories>../../Common/include;../../dependencies/glfw-3.3.4.bin.WIN32/include;../../dependencies/GLAD/include;../../dependencies/glm</AdditionalIncludeDirectories>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="CurveReader.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Material.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -854,6 +855,7 @@
     <ClInclude Include="..\..\Common\include\Shader.h" />
     <ClInclude Include="..\..\Common\include\stb_image.h" />
     <ClInclude Include="interfaces\Camera.h" />
+    <ClInclude Include="interfaces\CurveReader.h" />
     <ClInclude Include="interfaces\Material.h" />
     <ClInclude Include="interfaces\Mesh.h" />
     <ClInclude Include="interfaces\MovementHandler.h" />
@@ -867,17 +869,24 @@
     <Compile Include="shaders\Viewer.fs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="mtls\BlueChair.mtl" />
+    <Content Include="mtls\Deserto.mtl" />
     <Content Include="mtls\Mercurio.mtl" />
     <Content Include="mtls\Pikachu.mtl" />
     <Content Include="mtls\Pokebola.mtl" />
     <Content Include="mtls\Terra.mtl" />
+    <Content Include="objs\BlueChair.obj" />
+    <Content Include="objs\Deserto.obj" />
     <Content Include="objs\Mercurio.obj" />
     <Content Include="objs\Pikachu.obj" />
     <Content Include="objs\Pokebola.obj" />
     <Content Include="objs\Terra.obj" />
+    <Content Include="scene\pista.txt" />
     <Content Include="scene\scene.txt" />
     <Content Include="shaders\Viewer.vs" />
     <Content Include="textures\2k_mercury.jpg" />
+    <Content Include="textures\car.jpg" />
+    <Content Include="textures\deserto.bmp" />
     <Content Include="textures\PikachuDh.png" />
     <Content Include="textures\PikachuEyeDh.png" />
     <Content Include="textures\PikachuHohoDh.png" />

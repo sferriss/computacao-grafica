@@ -9,12 +9,17 @@ scale 1 1 1
 objpath ./objs/Terra.obj
 
 newobj
-translation 6.0 -2.0 0.0
-scale 1 1 1
-objpath ./objs/Pikachu.obj
-
-newobj
 translation 10.0 0.0 0.0
 scale 1 1 1
 objpath ./objs/Pokebola.obj
+
+newobj
+translation 6.0 0.0 0.0
+scale 1 1 1
+objpath ./objs/Deserto.obj
+
+newobj
+translation 15.0 -2.0 0.0
+scale 1 1 1
+objpath ./objs/Pikachu.obj
 
