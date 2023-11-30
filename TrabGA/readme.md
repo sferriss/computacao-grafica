@@ -18,6 +18,7 @@ Aluno: Sandro Ferri
 - As teclas I, O e P fazem as translações em cada um dos eixos
 - As teclas J, K e L aumentam as escalas, cada uma em um eixo diferente
 - As teclas B, N e M diminuem as escalas, cada uma em um eixo diferente
+- A tecla espaço muda a direção do movimento
 
 ------------------------------------------------------------------------------------------------------------------
 
